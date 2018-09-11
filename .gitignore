@@ -1,0 +1,20 @@
+# Gradle
+build
+.gradle
+
+# Eclispe
+bin
+.project
+.classpath
+.settings
+.metadata
+
+# Intellij
+out
+.idea
+*.iml
+*.ipr
+*.iws
+*.iml
+atlassian-ide-plugin.xml
+
