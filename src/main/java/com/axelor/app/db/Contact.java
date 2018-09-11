@@ -29,8 +29,8 @@ public class Contact {
 
 	private String phone;
 
-//	@OneToMany(mappedBy = "contact")
-//	private List<Address> addresses;
+	@OneToMany(mappedBy = "contact")
+	private List<Address> addresses;
 
 	public Contact() {
 
@@ -85,12 +85,12 @@ public class Contact {
 		this.phone = phone;
 	}
 
-//	public List<Address> getAddresses() {
-//		return addresses;
-//	}
-//
-//	public void setAddresses(List<Address> addresses) {
-//		this.addresses = addresses;
-//	}
+	public List<Address> getAddresses() {
+		return addresses;
+	}
+
+	public void setAddresses(List<Address> addresses) {
+		this.addresses = addresses;
+	}
 
 }

@@ -17,8 +17,8 @@ public class Address {
 	@SequenceGenerator(name = "ADDRESS_SEQ", sequenceName = "ADDRESS_SEQ", allocationSize = 1)
 	private Long id;
 	
-//	@ManyToOne
-//	private Contact contact;
+	@ManyToOne
+	private Contact contact;
 	
 	private String street;
 
@@ -33,13 +33,13 @@ public class Address {
 		this.id = id;
 	}
 	
-//	public Contact getContact() {
-//		return contact;
-//	}
-//
-//	public void setContact(Contact contact) {
-//		this.contact = contact;
-//	}
+	public Contact getContact() {
+		return contact;
+	}
+
+	public void setContact(Contact contact) {
+		this.contact = contact;
+	}
 
 	public String getStreet() {
 		return street;

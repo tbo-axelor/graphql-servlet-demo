@@ -1,5 +1,6 @@
 package com.axelor.app;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -8,8 +9,14 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.metamodel.Attribute;
+import javax.persistence.metamodel.Attribute.PersistentAttributeType;
 import javax.persistence.metamodel.EntityType;
+import javax.persistence.metamodel.PluralAttribute;
+import javax.persistence.metamodel.SingularAttribute;
+import javax.persistence.metamodel.Type;
 import javax.servlet.annotation.WebServlet;
+
+import org.hibernate.loader.plan.spi.EntityReference;
 
 import graphql.Scalars;
 import graphql.schema.GraphQLFieldDefinition;
@@ -17,6 +24,7 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLTypeReference;
 import graphql.servlet.SimpleGraphQLServlet;
 
 @WebServlet(urlPatterns = "/graphql")
@@ -33,15 +41,43 @@ public class GraphQLEndpoint extends SimpleGraphQLServlet {
 				.getEntities().stream().map(t -> getFieldDefination(t, em)).collect(Collectors.toList()))).build();
 
 	}
-
-	private static GraphQLOutputType findType(Attribute<?, ?> attr) {
+	
+	private static GraphQLOutputType findBasicType(Attribute<?, ?> attr) {
 		Class<?> type = attr.getJavaType();
 		if (String.class.isAssignableFrom(type)) {
 			return Scalars.GraphQLString;
+		} else if (Integer.class.isAssignableFrom(type) || int.class.isAssignableFrom(type)) {
+			return Scalars.GraphQLInt;
+		} else if (Short.class.isAssignableFrom(type) || short.class.isAssignableFrom(type)) {
+			return Scalars.GraphQLShort;
+		} else if (Float.class.isAssignableFrom(type) || float.class.isAssignableFrom(type)
+				|| Double.class.isAssignableFrom(type) || double.class.isAssignableFrom(type)) {
+			return Scalars.GraphQLFloat;
+		} else if (Long.class.isAssignableFrom(type) || long.class.isAssignableFrom(type)) {
+			return Scalars.GraphQLLong;
 		} else if (Long.class.isAssignableFrom(type)) {
 			return Scalars.GraphQLLong;
+		} else if (BigDecimal.class.isAssignableFrom(type)) {
+			return Scalars.GraphQLBigDecimal;
+		} else {
+			throw new UnsupportedOperationException(
+	                "Class could not be mapped to GraphQL: '" + type.getClass().getTypeName() + "'");
 		}
-		return Scalars.GraphQLString;
+	}
+
+	private static GraphQLOutputType findType(Attribute<?, ?> attr) {
+		if(attr.getPersistentAttributeType() == PersistentAttributeType.BASIC) {
+			return findBasicType(attr);
+		} else if(attr.getPersistentAttributeType() == PersistentAttributeType.ONE_TO_MANY || attr.getPersistentAttributeType() == PersistentAttributeType.MANY_TO_MANY) {
+			Type<?> foreignType = ((PluralAttribute<?, ?, ?>) attr).getElementType();
+			return new GraphQLList(new GraphQLTypeReference(foreignType.getJavaType().getSimpleName()));
+		} else if(attr.getPersistentAttributeType() == PersistentAttributeType.MANY_TO_ONE || attr.getPersistentAttributeType() == PersistentAttributeType.ONE_TO_ONE) {
+			Type<?> foreignType = ((SingularAttribute<?, ?>) attr).getType();
+			return new GraphQLTypeReference(foreignType.getJavaType().getSimpleName());
+		} else {
+			throw new UnsupportedOperationException(
+	                "Attribute could not be mapped to GraphQL: field '" + attr.getDeclaringType().getJavaType().getName() + "' of entity class '" + attr.getJavaMember().getName() + "'");
+		}
 	}
 
 	private static GraphQLFieldDefinition getFieldDefination(EntityType<?> entity, EntityManager entityManager) {
