@@ -1,8 +1,8 @@
 package com.axelor.app;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -16,9 +16,8 @@ import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.Type;
 import javax.servlet.annotation.WebServlet;
 
-import org.hibernate.loader.plan.spi.EntityReference;
-
 import graphql.Scalars;
+import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
@@ -37,9 +36,13 @@ public class GraphQLEndpoint extends SimpleGraphQLServlet {
 	private static GraphQLSchema buildSchema() {
 		EntityManagerFactory emf = Persistence.createEntityManagerFactory("graphql-java");
 		EntityManager em = emf.createEntityManager();
-		return GraphQLSchema.newSchema().query(GraphQLObjectType.newObject().name("query").fields(em.getMetamodel()
-				.getEntities().stream().map(t -> getFieldDefination(t, em)).collect(Collectors.toList()))).build();
+		return GraphQLSchema.newSchema().query(getQueryObject(em)).build();
 
+	}
+	
+	private static GraphQLObjectType getQueryObject(EntityManager em) {
+		return GraphQLObjectType.newObject().name("query").fields(em.getMetamodel()
+				.getEntities().stream().map(t -> getFieldDefination(t, em)).collect(Collectors.toList())).build();
 	}
 	
 	private static GraphQLOutputType findBasicType(Attribute<?, ?> attr) {
@@ -81,7 +84,7 @@ public class GraphQLEndpoint extends SimpleGraphQLServlet {
 	}
 
 	private static GraphQLFieldDefinition getFieldDefination(EntityType<?> entity, EntityManager entityManager) {
-		return GraphQLFieldDefinition.newFieldDefinition().name(entity.getName()).type(new GraphQLList(getType(entity)))
+		return GraphQLFieldDefinition.newFieldDefinition().name(entity.getName()).type(new GraphQLList(getType(entity))).argument(getArgumentList())
 				.dataFetcher(new JpaDataFetcher(entityManager, entity)).build();
 	}
 
@@ -97,4 +100,17 @@ public class GraphQLEndpoint extends SimpleGraphQLServlet {
 		return builder.build();
 	}
 
+	private static GraphQLArgument getIdArgument() {
+		return GraphQLArgument.newArgument().name("id").type(Scalars.GraphQLLong).build();
+	}
+
+	private static GraphQLArgument getFilterArgument() {
+		return GraphQLArgument.newArgument().name("filter").type(Scalars.GraphQLString).build();
+	}
+	private static List<GraphQLArgument> getArgumentList() {
+		List<GraphQLArgument> list = new ArrayList<>();
+		list.add(getIdArgument());
+		list.add(getFilterArgument());
+		return list;
+	}
 }

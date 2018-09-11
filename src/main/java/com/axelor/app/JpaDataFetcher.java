@@ -1,5 +1,7 @@
 package com.axelor.app;
 
+import java.util.Map;
+
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -26,11 +28,18 @@ public class JpaDataFetcher implements DataFetcher {
 	}
 
 	private TypedQuery<?> getQuery(DataFetchingEnvironment environment) {
-
+		
 		CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-	    CriteriaQuery<?> criteria = builder.createQuery(entity.getJavaType());
-	    Root<?> entityRoot = criteria.from(entity);
-		return entityManager.createQuery(criteria);
+	    CriteriaQuery<?> query = builder.createQuery(entity.getJavaType());
+	    Root<?> entityRoot = query.from(entity);
+
+	    Map<String,Object> args = environment.getArguments();
+	    
+	    if(args.get("id") != null) {
+	    	query.where(builder.equal(entityRoot.get("id"),args.get("id")));
+	    }
+	    	
+		return entityManager.createQuery(query);
 
 	}
 
