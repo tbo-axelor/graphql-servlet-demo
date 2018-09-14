@@ -2,7 +2,9 @@ package com.axelor.app.db;
 
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -28,8 +30,10 @@ public class Contact {
 	private String email;
 
 	private String phone;
+	
+	private Integer mobile;
 
-	@OneToMany(mappedBy = "contact")
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "contact", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Address> addresses;
 
 	public Contact() {
@@ -92,5 +96,15 @@ public class Contact {
 	public void setAddresses(List<Address> addresses) {
 		this.addresses = addresses;
 	}
+
+	public Integer getMobile() {
+		return mobile;
+	}
+
+	public void setMobile(Integer mobile) {
+		this.mobile = mobile;
+	}
+	
+	
 
 }

@@ -1,10 +1,17 @@
 package com.axelor.app;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
+import javax.persistence.OneToMany;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -61,10 +68,18 @@ public class JpaDataFetcher implements DataFetcher {
 		Class<?> klass = entity.getJavaType();
 		Object obj = klass.newInstance();
 		Field[] fields = klass.getDeclaredFields();
-		for (Field f : fields) {
-			f.setAccessible(true);
-			if (getValue(environment, f.getName()) != null) {
-				f.set(obj, getValue(environment, f.getName()));
+		for (Field field : fields) {
+			field.setAccessible(true);
+			if(field.getAnnotation(OneToMany.class) != null) {
+//				List<Object> list = new ArrayList<>();
+//				for(Object o : (List<Object>)getValue(environment, field.getName())) {
+//					Type elementType = ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+//					list.add(getObject(o,elementType));
+//				}
+//				
+//				field.set(obj, list);
+			} else if (getValue(environment, field.getName()) != null) {
+				field.set(obj, getValue(environment, field.getName()));
 			}
 		}
 		entityManager.getTransaction().begin();
@@ -74,7 +89,7 @@ public class JpaDataFetcher implements DataFetcher {
 	}
 
 	private Object getValue(DataFetchingEnvironment env, String name) {
-		LinkedHashMap<String, String> map = new LinkedHashMap<>();
+		LinkedHashMap<String, Object> map = new LinkedHashMap<>();
 		map = env.getArgument("data");
 		return map.get(name);
 	}
